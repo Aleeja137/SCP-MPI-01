@@ -56,8 +56,7 @@ int main (int argc, char *argv[])
   MPI_Comm_rank (MPI_COMM_WORLD, &pid);
   MPI_Comm_size (MPI_COMM_WORLD, &npr);
 
-  // Reparto de tareas estático consecutivo con resto acumulado
-  // PREGUNTA (¿Es mejor que lo calcule uno y broadcast? ¿O mejor lo calculan todos?)
+  // Reparto de tareas estático consecutivo con resto repartido (es el más rápido)
   tam = (int *) malloc (npr*sizeof(int));
   dis = (int *) malloc (npr*sizeof(int));
 
@@ -65,7 +64,8 @@ int main (int argc, char *argv[])
   resto = ZMAX % npr;
 
   for (i=0;i<npr;i++){
-    tam[i] = (i+1)*cociente - i*cociente ;
+    tam[i] = cociente;
+    if (i < resto) tam[i]++;
     if (i == 0) dis[i] = 0;
     else dis[i] = tam[i-1] + dis[i-1];
   }
@@ -92,7 +92,6 @@ int main (int argc, char *argv[])
   }
 
   // Cada procesador envía sus resultados a P0 acumulándolos o cogiendo el máximo
-  // PREGUNTA (¿Merece la pena empaquetar o struct?)
 
   MPI_Reduce(&num_iter,&num_iter_global,1,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);  
   MPI_Reduce(&local_pair,&global_pair,1,MPI_2INT,MPI_MAXLOC,0,MPI_COMM_WORLD);
